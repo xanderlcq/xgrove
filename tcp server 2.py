@@ -35,7 +35,7 @@ def client_thread(conn):
         reply = "OK . . I got it! " + data
         conn.sendall(reply)
     conn.close()
-
+# pipe
 # main loop
 while True:
     # blocking call, waits to accept a connection
