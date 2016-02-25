@@ -23,32 +23,29 @@ except socket.error, msg:
 s.listen(10)
 print("Listening...")
 
-list = [[],[],[]]
+clients = {}
 
 
-# for each thread/connection
-def client_thread(list1,name):
-    conn.send("Welcome to the Server. Type messages and press enter to send.\n")
+def client_thread(clients,conn):
+    conn.send("Welcome to the Server. Type messages and press enter to send"
+              ".\nrecipient:msgg:sender")
     while True:
-        index = list1[2].index(name)
-        data = list1[index][index].recv(1024)
+        data = conn.recv(1024)
         if not data:
             break
         print(data)
-        reply = "OK . . I got it! " + data
-        conn.sendall(reply)
+        conn.sendall(data)
+        rec = data[0:data.index(':')]
+        clients[rec].sendall(data[data.index(':')+1:])
     conn.close()
-# pipe
-# main loop
+
 while True:
-    # blocking call, waits to accept a connection
     conn, addr = s.accept()
-    conn_name = conn.recv(1024)
-    list[0].append(conn)
-    list[1].append(addr)
-    list[2].append(conn_name)
-    print("[-] Connected to " + addr[0] + ":" + str(addr[1])+" name:"+conn_name)
+    conn_id= conn.recv(1024)
+    conn.sendall(conn_id.upper())
+    clients[conn_id] = conn
+    print("[-] Connected to " + addr[0] + ":" + str(addr[1])+" name:"+conn_id)
+    start_new_thread(client_thread, (clients,conn,))
 
-    start_new_thread(client_thread, (list,conn_name,))
 
-s.close()
+
