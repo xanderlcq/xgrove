@@ -1,5 +1,5 @@
 import socket
-from thread import start_new_thread
+from thread import *
 def recieving_thread(conn):
     while True:
         data = conn.recv(1024)
@@ -9,10 +9,10 @@ def recieving_thread(conn):
 
 def Main():
     print("Send 'q' to exit\n")
-    nick = input("nick: ")
-    rec = input("Recipient: ")
+    nick = raw_input("nick: ")
+    rec = raw_input("Recipient: ")
     host = '127.0.0.1'
-    port = 9998
+    port = 9996
 
     # Connection and initial return value
     s = socket.socket()
@@ -22,7 +22,7 @@ def Main():
     print data
     start_new_thread(recieving_thread,(s,))
     while True:
-        message = input()
+        message = raw_input()
         data = rec+':'+message+':'+nick
         s.sendall(data)
 
