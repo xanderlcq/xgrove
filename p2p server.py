@@ -27,22 +27,25 @@ clients = {}
 
 
 def client_thread(clients,conn):
-    conn.send("Welcome to the Server. Type messages and press enter to send"
-              ".\nrecipient:msgg:sender")
     while True:
         data = conn.recv(1024)
         if not data:
             break
         print(data)
-        conn.sendall(data)
+        #conn.sendall(data)
         rec = data[0:data.index(':')]
-        clients[rec].sendall(data[data.index(':')+1:])
+        try:
+            clients[rec].sendall(data[data.index(':')+1:])
+        except KeyError:
+            conn.sendall(rec+' is not connected')
+
     conn.close()
 
 while True:
     conn, addr = s.accept()
     conn_id= conn.recv(1024)
-    conn.sendall(conn_id.upper())
+    conn.sendall(conn_id.upper()+" Welcome to the Server. Type messages and "
+                                 "press enter to send.\nrecipient:msgg:sender")
     clients[conn_id] = conn
     print("[-] Connected to " + addr[0] + ":" + str(addr[1])+" name:"+conn_id)
     start_new_thread(client_thread, (clients,conn,))
