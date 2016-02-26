@@ -6,7 +6,7 @@ from thread import start_new_thread
 def Main():
     # Initialization
     HOST = '' # all availabe interfaces
-    PORT = 9996 # arbitrary non privileged port
+    PORT = 52550 # arbitrary non privileged port
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error, msg:

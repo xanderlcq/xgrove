@@ -10,9 +10,11 @@ def recieving_thread(conn):
 def Main():
     print("Send 'q' to exit\n")
     nick = raw_input("nick: ")
+    assert nick != '', 'Nick name cannot be empty'
     rec = raw_input("Recipient: ")
-    host = '127.0.0.1'
-    port = 9996
+    assert rec != '', 'Recipient cannot be empty'
+    host = '52.6.89.200'
+    port = 52550
 
     # Connection and initial return value
     s = socket.socket()
