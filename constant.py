@@ -2,11 +2,11 @@
 grapefruit = 1
 
 # Device ID
-device_id = 1
+device_id = '00001'
 
 # TCP information
 TCP_IP = '172.25.47.127'
-TCP_PORT = '5005'
+TCP_PORT = 52550
 # API information
 API_URL = 'http://greenwall.elasticbeanstalk.com/api/log/'
 API_USERNAME = 'root'

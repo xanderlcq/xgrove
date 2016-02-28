@@ -25,6 +25,9 @@ def Main():
     start_new_thread(recieving_thread,(s,))
     while True:
         message = raw_input()
+        if message == 'q':
+            s.close()
+            break
         data = rec+':'+message+':'+nick
         s.sendall(data)
 
