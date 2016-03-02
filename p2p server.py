@@ -3,6 +3,22 @@ import sys
 from thread import start_new_thread
 
 
+def client_thread(clients,conn,conn_id):
+    while True:
+        data = conn.recv(1024)
+        if not data:
+            break
+        print(data)
+        rec = data[0:data.index(':')]
+        try:
+            clients[rec].sendall(data[data.index(':')+1:])
+        except KeyError:
+            conn.sendall(rec+' is not connected')
+    print 'closing connection'
+    conn.close()
+    del clients[conn_id]
+
+
 def Main():
     # Initialization
     HOST = '' # all availabe interfaces
@@ -28,21 +44,6 @@ def Main():
 
     clients = {}
 
-
-    def client_thread(clients,conn,conn_id):
-        while True:
-            data = conn.recv(1024)
-            if not data:
-                break
-            print(data)
-            rec = data[0:data.index(':')]
-            try:
-                clients[rec].sendall(data[data.index(':')+1:])
-            except KeyError:
-                conn.sendall(rec+' is not connected')
-        conn.close()
-        del clients[conn_id]
-
     while True:
         conn, addr = s.accept()
         conn_id= conn.recv(1024)
@@ -54,7 +55,7 @@ def Main():
             print("[-] Connected to " + addr[0] + ":" + str(addr[1])+" name:"+conn_id)
             start_new_thread(client_thread, (clients,conn,conn_id,))
         else:
-            conn.sendall("You're user id is already in use")
+            conn.sendall("Your user id is already in use")
             print("[-] Connection from " + addr[0] + ":" + str(addr[1])+
                   " name:"+conn_id +" is refused.")
             conn.close()
