@@ -39,4 +39,6 @@ if is_internet_on():
         brightness = tcp_socket.recv(1024)
         if not brightness:
             break
-        arduino.write(brightness)
+        print brightness[0:brightness.index(':')]
+        arduino.write(brightness[0:brightness.index(':')])
+        arduino.flush()

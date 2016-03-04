@@ -1,6 +1,6 @@
 import socket
 import sys
-from thread import start_new_thread
+from thread import *
 
 
 def client_thread(clients,conn,conn_id):
@@ -17,6 +17,9 @@ def client_thread(clients,conn,conn_id):
     print 'closing connection'
     conn.close()
     del clients[conn_id]
+    print 'connection closed, id:' + conn_id
+    exit_thread()
+
 
 
 def Main():
@@ -48,7 +51,7 @@ def Main():
         conn, addr = s.accept()
         conn_id= conn.recv(1024)
 
-        if not clients.has_key(conn_id):
+        if not conn_id in clients:
             clients[conn_id] = conn
             conn.sendall(conn_id.upper()+" Welcome to the Server. Type messages and "
                                      "press enter to send.\nrecipient:msgg:sender")
