@@ -5,15 +5,19 @@ from thread import *
 
 def client_thread(clients,conn,conn_id):
     while True:
-        data = conn.recv(1024)
-        if not data:
-            break
-        print(data)
-        rec = data[0:data.index(':')]
         try:
-            clients[rec].sendall(data[data.index(':')+1:])
-        except KeyError:
-            conn.sendall(rec+' is not connected')
+            data = conn.recv(1024)
+            if not data:
+                break
+            print(data)
+            rec = data[0:data.index(':')]
+            try:
+                clients[rec].sendall(data[data.index(':')+1:])
+            except KeyError:
+                conn.sendall(rec+' is not connected')
+        except socket.timeout:
+            print conn_id + ' timed out!'
+            break
     print 'closing connection'
     conn.close()
     del clients[conn_id]
@@ -25,7 +29,7 @@ def client_thread(clients,conn,conn_id):
 def Main():
     # Initialization
     HOST = '' # all availabe interfaces
-    PORT = 52550 # arbitrary non privileged port
+    PORT = 52551 # arbitrary non privileged port
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error, msg:
@@ -41,7 +45,6 @@ def Main():
     except socket.error, msg:
         print("Bind Failed. Error Code: {} Error: {}".format(str(msg[0]), msg[1]))
         sys.exit()
-
     s.listen(10)
     print("Listening...")
 
@@ -49,8 +52,8 @@ def Main():
 
     while True:
         conn, addr = s.accept()
+        conn.settimeout(10)
         conn_id= conn.recv(1024)
-
         if not conn_id in clients:
             clients[conn_id] = conn
             conn.sendall(conn_id.upper()+" Welcome to the Server. Type messages and "

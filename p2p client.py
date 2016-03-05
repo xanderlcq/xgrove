@@ -14,7 +14,7 @@ def Main():
     rec = raw_input("Recipient: ")
     assert rec != '', 'Recipient cannot be empty'
     host = TCP_IP
-    port = 52550
+    port = TCP_PORT
 
     # Connection and initial return value
     s = socket.socket()
@@ -29,7 +29,11 @@ def Main():
             s.close()
             break
         data = rec+':'+message+':'+nick
-        s.sendall(data)
+        try:
+            s.sendall(data)
+        except socket.error:
+            print 'TCP closed'
+            break
 
 if __name__ == "__main__":
     Main()
