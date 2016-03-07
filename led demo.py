@@ -40,5 +40,5 @@ if is_internet_on():
         if not brightness:
             break
         print brightness[0:brightness.index(':')]
-        arduino.write(brightness[0:brightness.index(':')])
-        arduino.flush()
+        #arduino.write(brightness[0:brightness.index(':')])
+        #arduino.flush()
