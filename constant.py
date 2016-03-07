@@ -2,7 +2,7 @@
 grapefruit = 1
 
 # Device ID
-device_id = '0003'
+device_id = '0009'
 
 # TCP information
 TCP_IP = '52.6.89.200'

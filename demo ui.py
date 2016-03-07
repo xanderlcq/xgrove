@@ -1,7 +1,7 @@
 
 import socket
 nick = 'app123'
-rec = '0003'
+rec = '0004'
 host = '52.6.89.200'
 port = 52550
 s = socket.socket()

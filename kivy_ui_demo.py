@@ -1,6 +1,7 @@
 import socket
-nick = 'app123'
-rec = '0003'
+from constant import *
+nick = 'app123123345671238'
+rec = device_id
 host = '52.6.89.200'
 port = 52550
 s = socket.socket()

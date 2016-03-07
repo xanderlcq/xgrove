@@ -36,9 +36,15 @@ if is_internet_on():
     tcp_socket = connect_tcp()
     arduino = connect_arduino()
     while True:
-        brightness = tcp_socket.recv(1024)
-        if not brightness:
-            break
-        print brightness[0:brightness.index(':')]
-        #arduino.write(brightness[0:brightness.index(':')])
-        #arduino.flush()
+        try:
+            brightness = tcp_socket.recv(1024)
+            if not brightness:
+                break
+            pulseback = brightness[brightness.index(':')+1:]+':recieved:'+device_id
+            tcp_socket.sendall(pulseback)
+            print brightness[0:brightness.index(':')]
+            #tcp_socket.sendall(brightness[brightness.index(':'):]+':recieved:'+device_id)
+            #arduino.write(brightness[0:brightness.index(':')])
+            #arduino.flush()
+        except:
+            pass
