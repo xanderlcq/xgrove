@@ -1,3 +1,7 @@
+"""
+LED demo, based on KIVY UI. Can run a many platforms
+"""
+
 import socket
 from constant import *
 nick = 'app123123345671238'

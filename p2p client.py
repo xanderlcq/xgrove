@@ -1,3 +1,6 @@
+"""
+P2P chat client
+"""
 import socket
 from thread import *
 def recieving_thread(conn):

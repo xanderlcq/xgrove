@@ -1,3 +1,6 @@
+"""
+Direct TCP socket test
+"""
 import socket
 
 def Main():

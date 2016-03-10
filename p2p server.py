@@ -1,3 +1,6 @@
+"""
+This is a general p2p TCP relay server.
+"""
 import socket
 import sys
 from thread import *

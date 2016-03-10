@@ -1,3 +1,6 @@
+"""
+LED controller demo, relay information between the TCP server and the arduino
+"""
 import socket
 import serial
 from constant import *

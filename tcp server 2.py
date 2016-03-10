@@ -1,3 +1,6 @@
+"""
+TCP socket sample test
+"""
 import socket
 import sys
 from thread import start_new_thread

@@ -1,3 +1,6 @@
+"""
+Automation Program
+"""
 import glob
 import time
 import serial

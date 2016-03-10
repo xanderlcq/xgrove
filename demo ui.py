@@ -1,4 +1,6 @@
-
+"""
+LED Demo, based on Tkinter UI
+"""
 import socket
 nick = 'app123'
 rec = '0004'

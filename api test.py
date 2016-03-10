@@ -1,3 +1,6 @@
+"""
+Example of using HTTP API to read/write information to the database
+"""
 import requests
 url = 'http://greenwall.elasticbeanstalk.com/api/log/'
 params = {'username':'root', 'api_key':'123', 'format':'json'}
