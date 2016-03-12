@@ -65,9 +65,15 @@ void initialize() {
   drain(1);
   fill(2);
   fill(3);
+  Serial.println("initializing");
   while (true) {
-    float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
-    float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
+  float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
+  float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
+  float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
+  //Serial.print(analogRead(A0));
+  Serial.print("Bed1: " + String(bed1));
+  Serial.print("; Bed2: " + String(bed2));
+  Serial.println("; Bed3: " + String(bed3));
     if (bed2 < (bed2_full * 0.6)) {
       pause_cycle(2);
     }
