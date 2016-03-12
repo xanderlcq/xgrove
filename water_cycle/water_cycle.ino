@@ -23,17 +23,24 @@ int valve2 = 6;
 int valve3 = 7;
 void setup() {
   Serial.begin(9600);
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(7, OUTPUT);
+  halt();
+  initialize();
 }
 void loop() {
-  //float bed1 = SERIESRESISTOR/((1023.0 / analogRead(Water_Lv_1)) - 1.0);
-  float bed1 = (5.0/((analogRead(Water_Lv_1)*5.0)/1024.0)-1)*560;
-  float bed2 = (5.0/((analogRead(Water_Lv_2)*5.0)/1024.0)-1)*560;
-  float bed3 = (5.0/((analogRead(Water_Lv_3)*5.0)/1024.0)-1)*560;
+  float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
+  float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
+  float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
   //Serial.print(analogRead(A0));
   Serial.print("Bed1: " + String(bed1));
   Serial.print("; Bed2: " + String(bed2));
   Serial.println("; Bed3: " + String(bed3));
-  
+
   if (bed1 < bed1_full) {
     drain(1);
   }
@@ -54,7 +61,32 @@ void loop() {
   }
   delay(50);
 }
+void initialize() {
+  drain(1);
+  fill(2);
+  fill(3);
+  while (true) {
+    float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
+    float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
+    if (bed2 < (bed2_full * 0.6)) {
+      pause_cycle(2);
+    }
+    if (bed3 < bed3_full) {
+      pause_cycle(3);
+    }
+    if ((bed2 < (bed2_full * 0.6)) && (bed3 < bed3_full)) {
+      halt();
+      break;
+    }
+    delay(50);
+  }
+}
+void halt() {
+  pause_cycle(1);
+  pause_cycle(2);
+  pause_cycle(3);
 
+}
 void pause_cycle(int bed) {
   if (bed == 1) {
     digitalWrite(valve1, HIGH); //close valve
