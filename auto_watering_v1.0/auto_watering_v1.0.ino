@@ -43,10 +43,12 @@ void setup() {
 }
 
 void loop() {
+
   auto_water(0.1);
   for(int i = 0;i<30;i++){
   delay(MINUTE);
   }
+
 
 
 }
