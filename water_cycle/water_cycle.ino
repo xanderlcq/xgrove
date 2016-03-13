@@ -4,9 +4,9 @@
 float bed1_dry = 1500;
 float bed2_dry = 1500;
 float bed3_dry = 2200;//R is high when water level is low
-float bed1_full = 400;
-float bed2_full = 400;
-float bed3_full = 400;//R is low when water level is high
+float bed1_full = 850;
+float bed2_full = 800;
+float bed3_full = 650;//R is low when water level is high
 //Water level sensors
 #define Water_Lv_1 A0
 #define Water_Lv_2 A1
@@ -67,20 +67,20 @@ void initialize() {
   fill(3);
   Serial.println("initializing");
   while (true) {
-  float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
-  float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
-  float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
-  //Serial.print(analogRead(A0));
-  Serial.print("Bed1: " + String(bed1));
-  Serial.print("; Bed2: " + String(bed2));
-  Serial.println("; Bed3: " + String(bed3));
-    if (bed2 < (bed2_full * 0.6)) {
+    float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
+    float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
+    float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
+    //Serial.print(analogRead(A0));
+    Serial.print("Bed1: " + String(bed1));
+    Serial.print("; Bed2: " + String(bed2));
+    Serial.println("; Bed3: " + String(bed3));
+    if (bed2 < (bed2_full * 1.5)) {
       pause_cycle(2);
     }
     if (bed3 < bed3_full) {
       pause_cycle(3);
     }
-    if ((bed2 < (bed2_full * 0.6)) && (bed3 < bed3_full)) {
+    if ((bed2 < (bed2_full *1.5)) && (bed3 < bed3_full)) {
       halt();
       break;
     }
