@@ -33,6 +33,10 @@ void setup() {
   initialize();
 }
 void loop() {
+  checkBedsLv();
+  delay(50);
+}
+void checkBedsLv() {
   float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
   float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
   float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
@@ -59,7 +63,6 @@ void loop() {
   if (bed3 > bed3_dry) {
     fill(3);
   }
-  delay(50);
 }
 void initialize() {
   drain(1);
@@ -80,7 +83,7 @@ void initialize() {
     if (bed3 < bed3_full) {
       pause_cycle(3);
     }
-    if ((bed2 < (bed2_full *1.5)) && (bed3 < bed3_full)) {
+    if ((bed2 < (bed2_full * 1.5)) && (bed3 < bed3_full)) {
       halt();
       break;
     }
