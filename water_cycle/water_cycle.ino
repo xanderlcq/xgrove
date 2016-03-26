@@ -1,6 +1,6 @@
 // Grow bed auto water cycling
 // Event driven, filling and drainging
-//Thresholds
+//Thresholds for water levels
 float bed1_dry = 1500;
 float bed2_dry = 1500;
 float bed3_dry = 2200;//R is high when water level is low
