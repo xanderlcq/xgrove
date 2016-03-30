@@ -1,4 +1,4 @@
-
+#include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <Wire.h>
@@ -56,11 +56,12 @@ void loop() {
   // put your main code here, to run repeatedly:
 
 }
-//=============Sensors========================
+//=============Water temp sensor========================
 float getWaterTemp() {
   water_temp_sensors.requestTemperatures();// Send the command to get temperatures
   return water_temp_sensors.getTempCByIndex(0);
 }
+
 //=============Water level control=================
 void checkBedsLv() {
   float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
@@ -90,6 +91,7 @@ void checkBedsLv() {
     fill(3);
   }
 }
+
 void initialize_water() {
   drain(1);
   fill(2);
@@ -116,12 +118,14 @@ void initialize_water() {
     delay(50);
   }
 }
+
 void halt() {
   pause_cycle(1);
   pause_cycle(2);
   pause_cycle(3);
 
 }
+
 void pause_cycle(int bed) {
   if (bed == 1) {
     digitalWrite(valve1, HIGH); //close valve
@@ -157,6 +161,7 @@ void drain(int bed) {
     return;
   }
 }
+
 void fill(int bed) {
   if (bed == 1) {
     digitalWrite(valve1, HIGH); //shut off valve
@@ -175,6 +180,7 @@ void fill(int bed) {
   }
 }
 
+//================For light sensor===============
 void displaySensorDetails(void){
   sensor_t sensor;
   tsl.getSensor(&sensor);
@@ -190,11 +196,6 @@ void displaySensorDetails(void){
   delay(500);
 }
 
-/**************************************************************************/
-/*
-    Configures the gain and integration time for the TSL2561
-*/
-/**************************************************************************/
 void configureSensor(void){
   /* You can also manually set the gain or enable auto-gain support */
   // tsl.setGain(TSL2561_GAIN_1X);      /* No gain ... use in bright light to avoid sensor saturation */
@@ -212,7 +213,6 @@ void configureSensor(void){
   Serial.print  ("Timing:       "); Serial.println("13 ms");
   Serial.println("------------------------------------");
 }
-
 
 void init_light_sensor(void) {
   /* Initialise the sensor */
@@ -233,6 +233,7 @@ void init_light_sensor(void) {
   Serial.println("");
 
 }
+
 float pull_light_sensor(void) {
   /* Get a new sensor event */
   sensors_event_t event;
