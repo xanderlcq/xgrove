@@ -1,3 +1,4 @@
+//Light Sensor Example
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
@@ -83,17 +84,9 @@ void configureSensor(void)
   Serial.println("------------------------------------");
 }
 
-/**************************************************************************/
-/*
-    Arduino setup function (automatically called at startup)
-*/
-/**************************************************************************/
-void setup(void) 
-{
-  Serial.begin(9600);
-  Serial.println("Light Sensor Test"); Serial.println("");
-  
-  /* Initialise the sensor */
+
+void init_light_sensor(void){
+    /* Initialise the sensor */
   if(!tsl.begin())
   {
     /* There was a problem detecting the ADXL345 ... check your connections */
@@ -109,30 +102,36 @@ void setup(void)
   
   /* We're ready to go! */
   Serial.println("");
+  
 }
-
-/**************************************************************************/
-/*
-    Arduino loop function, called once 'setup' is complete (your own code
-    should go here)
-*/
-/**************************************************************************/
-void loop(void) 
-{  
-  /* Get a new sensor event */ 
+float pull_light_sensor(void){
+    /* Get a new sensor event */ 
   sensors_event_t event;
   tsl.getEvent(&event);
  
   /* Display the results (light is measured in lux) */
   if (event.light)
   {
-    Serial.print(event.light); Serial.println(" lux");
+    float val = event.light;
+    //Serial.print(val); Serial.println(" lux");
+    return val;
   }
   else
   {
     /* If event.light = 0 lux the sensor is probably saturated
        and no reliable data could be generated! */
-    Serial.println("Sensor overload");
+    //Serial.println("Sensor overload");
+    return -1;
   }
+}
+
+void setup(void) 
+{  
+init_light_sensor();
+}
+
+void loop(void) 
+{  
+Serial.print(pull_light_sensor());Serial.println(" lux");
   delay(250);
 }

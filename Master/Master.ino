@@ -1,3 +1,11 @@
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_TSL2561_U.h>
+
+
 //Thresholds for water levels
 float bed1_dry = 1500;
 float bed2_dry = 1500;
@@ -20,8 +28,8 @@ int valve1 = 5;
 int valve2 = 6;
 int valve3 = 7;
 //Sensros
-#include <OneWire.h>
-#include <DallasTemperature.h>
+//Lux/light sensor
+Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 // Data wire is plugged into port 10 on the Arduino
 #define ONE_WIRE_BUS 10
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -40,8 +48,8 @@ void setup() {
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
   halt();
-  initialize();
-
+  initialize_water();
+  init_light_sensor();
 }
 
 void loop() {
@@ -82,7 +90,7 @@ void checkBedsLv() {
     fill(3);
   }
 }
-void initialize() {
+void initialize_water() {
   drain(1);
   fill(2);
   fill(3);
@@ -166,3 +174,83 @@ void fill(int bed) {
     return;
   }
 }
+
+void displaySensorDetails(void){
+  sensor_t sensor;
+  tsl.getSensor(&sensor);
+  Serial.println("------------------------------------");
+  Serial.print  ("Sensor:       "); Serial.println(sensor.name);
+  Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);
+  Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
+  Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" lux");
+  Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" lux");
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");
+  Serial.println("------------------------------------");
+  Serial.println("");
+  delay(500);
+}
+
+/**************************************************************************/
+/*
+    Configures the gain and integration time for the TSL2561
+*/
+/**************************************************************************/
+void configureSensor(void){
+  /* You can also manually set the gain or enable auto-gain support */
+  // tsl.setGain(TSL2561_GAIN_1X);      /* No gain ... use in bright light to avoid sensor saturation */
+  // tsl.setGain(TSL2561_GAIN_16X);     /* 16x gain ... use in low light to boost sensitivity */
+  tsl.enableAutoRange(true);            /* Auto-gain ... switches automatically between 1x and 16x */
+
+  /* Changing the integration time gives you better sensor resolution (402ms = 16-bit data) */
+  tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
+  // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);  /* medium resolution and speed   */
+  // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */
+
+  /* Update these values depending on what you've set above! */
+  Serial.println("------------------------------------");
+  Serial.print  ("Gain:         "); Serial.println("Auto");
+  Serial.print  ("Timing:       "); Serial.println("13 ms");
+  Serial.println("------------------------------------");
+}
+
+
+void init_light_sensor(void) {
+  /* Initialise the sensor */
+  if (!tsl.begin())
+  {
+    /* There was a problem detecting the ADXL345 ... check your connections */
+    Serial.print("Ooops, no TSL2561 detected ... Check your wiring or I2C ADDR!");
+    while (1);
+  }
+
+  /* Display some basic information on this sensor */
+  displaySensorDetails();
+
+  /* Setup the sensor gain and integration time */
+  configureSensor();
+
+  /* We're ready to go! */
+  Serial.println("");
+
+}
+float pull_light_sensor(void) {
+  /* Get a new sensor event */
+  sensors_event_t event;
+  tsl.getEvent(&event);
+
+  /* Display the results (light is measured in lux) */
+  if (event.light)
+  {
+    float val = event.light;
+    //Serial.print(val); Serial.println(" lux");
+    return val;
+  }
+  else
+  {
+    /* If event.light = 0 lux the sensor is probably saturated
+       and no reliable data could be generated! */
+    //Serial.println("Sensor overload");
+    return -1;
+  }
+}
+
