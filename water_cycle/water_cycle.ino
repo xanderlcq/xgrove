@@ -1,5 +1,6 @@
 // Grow bed auto water cycling
 // Event driven, filling and drainging
+#define aref_voltage 5.0
 //Thresholds for water levels
 float bed1_dry = 1500;
 float bed2_dry = 1500;
@@ -37,9 +38,9 @@ void loop() {
   delay(50);
 }
 void checkBedsLv() {
-  float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
-  float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
-  float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
+  float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   //Serial.print(analogRead(A0));
   Serial.print("Bed1: " + String(bed1));
   Serial.print("; Bed2: " + String(bed2));
@@ -69,23 +70,26 @@ void initialize() {
   fill(2);
   fill(3);
   Serial.println("initializing");
+  boolean b2 = false;
+  boolean b3 = false;
   while (true) {
-    float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
-    float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
-    float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
-    //Serial.print(analogRead(A0));
+    float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+    float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+    float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
     Serial.print("Bed1: " + String(bed1));
     Serial.print("; Bed2: " + String(bed2));
     Serial.println("; Bed3: " + String(bed3));
-    if (bed2 < (bed2_full * 1.5)) {
+    if (bed2 < (bed2_full * 1.3)) {
       pause_cycle(2);
+      b2 = true;
     }
     if (bed3 < bed3_full) {
       pause_cycle(3);
+      b3 = true;
     }
-    if ((bed2 < (bed2_full * 1.5)) && (bed3 < bed3_full)) {
+    if (b2&&b3&& (bed1>bed1_dry*0.9)) {
       halt();
-      break;
+      return;
     }
     delay(50);
   }

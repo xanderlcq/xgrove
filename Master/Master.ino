@@ -18,6 +18,7 @@ float bed3_full = 650;//R is low when water level is high
 #define Water_Lv_2 A1
 #define Water_Lv_3 A2
 float SERIESRESISTOR = 560.0;
+#define aref_voltage 5.0
 //Out put
 //Pumps
 int pump1 = 2;
@@ -28,6 +29,7 @@ int valve1 = 5;
 int valve2 = 6;
 int valve3 = 7;
 //Sensros
+int tempPin = 1; 
 //Lux/light sensor
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 // Data wire is plugged into port 10 on the Arduino
@@ -47,6 +49,7 @@ void setup() {
   pinMode(5, OUTPUT);
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
+  //analogReference(EXTERNAL);
   halt();
   initialize_water();
   init_light_sensor();
@@ -97,23 +100,26 @@ void initialize_water() {
   fill(2);
   fill(3);
   Serial.println("initializing");
+  boolean b2 = false;
+  boolean b3 = false;
   while (true) {
-    float bed1 = (5.0 / ((analogRead(Water_Lv_1) * 5.0) / 1024.0) - 1) * 560;
-    float bed2 = (5.0 / ((analogRead(Water_Lv_2) * 5.0) / 1024.0) - 1) * 560;
-    float bed3 = (5.0 / ((analogRead(Water_Lv_3) * 5.0) / 1024.0) - 1) * 560;
-    //Serial.print(analogRead(A0));
+    float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+    float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+    float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
     Serial.print("Bed1: " + String(bed1));
     Serial.print("; Bed2: " + String(bed2));
     Serial.println("; Bed3: " + String(bed3));
-    if (bed2 < (bed2_full * 1.5)) {
+    if (bed2 < (bed2_full * 1.3)) {
       pause_cycle(2);
+      b2 = true;
     }
     if (bed3 < bed3_full) {
       pause_cycle(3);
+      b3 = true;
     }
-    if ((bed2 < (bed2_full * 1.5)) && (bed3 < bed3_full)) {
+    if (b2&&b3&& (bed1>bed1_dry*0.9)) {
       halt();
-      break;
+      return;
     }
     delay(50);
   }
@@ -253,5 +259,15 @@ float pull_light_sensor(void) {
     //Serial.println("Sensor overload");
     return -1;
   }
+}
+float get_analog_temp(){
+  int tempReading = analogRead(tempPin);  
+  // converting that reading to voltage, which is based off the reference voltage
+  float voltage = tempReading * aref_voltage;
+  voltage /= 1024.0; 
+  // now print out the temperature
+  float temperatureC = (voltage - 0.5) * 100 ;  //converting from 10 mv per degree wit 500 mV offset
+                                               //to degrees ((volatge - 500mV) times 100)
+  return temperatureC;
 }
 

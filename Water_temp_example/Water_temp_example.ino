@@ -7,7 +7,7 @@
 OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature water_temp_sensors(&oneWire);
-
+#define aref_voltage 5.0
 
 void setup(void)
 {
