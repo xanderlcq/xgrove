@@ -2,12 +2,15 @@
 // Event driven, filling and drainging
 #define aref_voltage 5.0
 //Thresholds for water levels
-float bed1_dry = 1500;
-float bed2_dry = 1500;
-float bed3_dry = 2200;//R is high when water level is low
-float bed1_full = 850;
+float bed1_dry = 2200;
+float bed2_dry = 1630;
+float bed3_dry = 1550;//R is high when water level is low
+float bed1_full = 1000;
 float bed2_full = 800;
-float bed3_full = 650;//R is low when water level is high
+float bed3_full = 750;//R is low when water level is high
+boolean b1_filling = false;
+boolean b2_filling = false;
+boolean b3_filling = false;
 //Water level sensors
 #define Water_Lv_1 A0
 #define Water_Lv_2 A1
@@ -42,27 +45,42 @@ void checkBedsLv() {
   float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   //Serial.print(analogRead(A0));
-  Serial.print("Bed1: " + String(bed1));
+  Serial.print("Cyc: Bed1: " + String(bed1));
   Serial.print("; Bed2: " + String(bed2));
   Serial.println("; Bed3: " + String(bed3));
 
   if (bed1 < bed1_full) {
-    drain(1);
+    b1_filling = false;
   }
   if (bed2 < bed2_full) {
-    drain(2);
+    b2_filling = false;
   }
   if (bed3 < bed3_full) {
-    drain(3);
+    b3_filling = false;
   }
   if (bed1 > bed1_dry) {
-    fill(1);
+    b1_filling = true;
   }
   if (bed2 > bed2_dry) {
-    fill(2);
+    b2_filling = true;
   }
   if (bed3 > bed3_dry) {
+    b3_filling = true;
+  }
+  if(b1_filling){
+    fill(1);
+  }else{
+    drain(1);
+  }
+    if(b2_filling){
+    fill(2);
+  }else{
+    drain(2);
+  }
+    if(b3_filling){
     fill(3);
+  }else{
+    drain(3);
   }
 }
 void initialize() {
@@ -117,7 +135,6 @@ void pause_cycle(int bed) {
     return;
   }
 }
-
 void drain(int bed) {
   if (bed == 1) {
     digitalWrite(valve1, LOW); //open valve

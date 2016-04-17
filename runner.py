@@ -144,6 +144,7 @@ if internet_connection:
                 params = {'username':+API_USERNAME, 'api_key': API_KEY, 'format':'json'}
                 headers = {'content-type': 'application/json'}
                 requests.post(API_URL, params=params, data=data, headers=headers)
+
                 if not tcp_connection:
                     print 'Attempting to reconnect to TCP'
                     tcp_socket = connect_tcp()

@@ -126,12 +126,13 @@ float pull_light_sensor(void){
 }
 
 void setup(void) 
-{  
+{
+Serial.begin(9600);
 init_light_sensor();
 }
 
 void loop(void) 
 {  
 Serial.print(pull_light_sensor());Serial.println(" lux");
-  delay(250);
+  delay(50);
 }
