@@ -11,6 +11,12 @@ from thread import *
 from constant import *
 import urllib2
 
+arduino_connection = False
+tcp_connection = False
+mode = Mode_record
+tcp_socket = None
+arduino_serial = None
+
 
 def secondary_thread():
     global tcp_connection
@@ -26,6 +32,7 @@ def secondary_thread():
             pulse_back = tcp_socket.recv(1024)
             if not pulse_back:
                 print 'TCP failed, attempting to reconnect'
+                tcp_socket.close()
                 tcp_socket = connect_tcp()
                 if tcp_socket is None:
                     print 'TCP connection dropped'
@@ -75,26 +82,9 @@ def connect_arduino():
         return None
 
 
-arduino_connection = False
-tcp_connection = False
-mode = Mode_record
-tcp_socket = None
-arduino_serial = None
-internet_connection = is_internet_on()
-
-if internet_connection:
-    # All initialization
-    print 'Initializing the system\n'
-    # Initialize TCP socket
-    print 'Initializing TCP connection'
-    tcp_socket = connect_tcp()
-    if tcp_socket is not None:
-        tcp_connection = True
-        print 'TCP initialized\n'
-    else:
-        print 'TCP failed to initialize\n'
-
-    # Initialize Arduino (Required)
+def init_arduino():
+    global arduino_connection
+    global arduino_serial
     print 'Initializing Arduino connection'
     while not arduino_connection:
         arduino_serial = connect_arduino()
@@ -105,6 +95,21 @@ if internet_connection:
             print 'Can not connect to arduino, please check usb connection'
             time.sleep(1)
 
+
+def init_tcp():
+    global tcp_connection
+    global tcp_socket
+    # Initialize TCP socket
+    print 'Initializing TCP connection'
+    tcp_socket = connect_tcp()
+    if tcp_socket is not None:
+        tcp_connection = True
+        print 'TCP initialized\n'
+    else:
+        print 'TCP failed to initialize\n'
+
+
+def init_secondary_thread():
     # Initialize secondary thread
     if tcp_connection:
         print 'Starting secondary tcp listening thread'
@@ -115,54 +120,46 @@ if internet_connection:
               'System will attempt to connect and start the secondary' \
               ' thread later.\n'
 
+
+def api_upload(data_string):
+    params = {'username':+API_USERNAME, 'api_key': API_KEY, 'format':'json'}
+    headers = {'content-type': 'application/json'}
+    requests.post(API_URL, params=params, data=data_string, headers=headers)
+
+
+def check_tcp():
+    pass
+
+
+if is_internet_on():
+    # All initialization
+    print 'Initializing the system\n'
+    # Initialize Arduino (Required)
+    init_arduino()
+    # Initialize TCP
+    init_tcp()
+    # Initialize Secondary Thread
+    init_secondary_thread()
     # All initialization done
     print 'All initialization done\n'
-
     print 'Starting Loop\n'
     while True:
-        # Controlling Mode
-        if mode == Mode_control:
-            data = arduino_serial.readline()
-            tcp_socket.sendall(data)
-            command = tcp_socket.recv(1024)
-            if not command:
-                print 'TCP disconnected, attempting to reconnect'
-                tcp_socket = connect_tcp()
-                if tcp_socket is None:
-                    'Failed to reconnect to tcp\n'
-                    tcp_connection = False
-                else:
-                    'Reconnected to tcp\n'
-                    tcp_connection = True
-            elif command == str(Mode_record):
-                mode = Mode_record
-                start_new_thread(secondary_thread,(tcp_socket,))
-            else:
-                arduino_serial.write(command)
-        # Recording Mode
-        elif mode == Mode_record:
+        if mode == Mode_record:
             try:
+                arduino_serial.write("pull_all")
                 data = arduino_serial.readline()
-                j_data = json.loads(data)
-                params = {'username':+API_USERNAME, 'api_key': API_KEY, 'format':'json'}
-                headers = {'content-type': 'application/json'}
-                requests.post(API_URL, params=params, data=data, headers=headers)
-
-                if not tcp_connection:
-                    print 'Attempting to reconnect to TCP'
-                    tcp_socket = connect_tcp()
-                    if tcp_socket is None:
-                        'Failed to reconnect to tcp\n'
-                        tcp_connection = False
-                    else:
-                        'Reconnected to tcp\n'
-                        tcp_connection = True
-                        start_new_thread(secondary_thread, ())
-
+                api_upload(data)
+                for i in range(60):
+                    time.sleep(1)
+                    if mode == Mode_control:
+                        break
             except ValueError:
                 print 'invalid data reading'
             except AssertionError:
                 print 'Serial reading failed'
+        if mode == Mode_control:
+            # TO-DO
+            pass
 else:
     print 'No internet connection, ' \
           'please connect to internet and reboot the system.'

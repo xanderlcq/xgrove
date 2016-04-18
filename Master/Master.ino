@@ -78,7 +78,9 @@ void loop() {
   // When commands come in hot 
   if (stringComplete) {
     Serial.println(inputString);
-    //do something about it
+    if(inputString == "get_all"){
+      Serial.println(getAllSensors());
+    }
     // clear the string:
     inputString = "";
     stringComplete = false;
