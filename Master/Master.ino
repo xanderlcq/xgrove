@@ -12,9 +12,9 @@ boolean stringComplete = false;  // whether the string is complete
 float bed1_dry = 2200;
 float bed2_dry = 1630;
 float bed3_dry = 1400;//R is high when water level is low
-float bed1_full = 1000-25;
-float bed2_full = 800-25;
-float bed3_full = 750-25;//R is low when water level is high
+float bed1_full = 1000 - 25;
+float bed2_full = 800 - 25;
+float bed3_full = 750 - 25; //R is low when water level is high
 boolean b1_filling = false;
 boolean b2_filling = false;
 boolean b3_filling = false;
@@ -75,10 +75,10 @@ void serialEvent() {
   }
 }
 void loop() {
-  // When commands come in hot 
+  // When commands come in hot
   if (stringComplete) {
     //Serial.println(inputString);
-    if(inputString == "get_all"){
+    if (inputString == "get_all") {
       Serial.println(getAllSensors());
     }
     // clear the string:
@@ -88,15 +88,17 @@ void loop() {
   //Always checking
   checkBedsLv();
   //Serial.println(get_light_sensor());
-  
+
 }
+//analogTemp,digitalTemp,waterTemp,moisture,humidity,ph,mass,sound,airPressure
 //====Communication==========
-String getAllSensors(){
+String getAllSensors() {
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& dat = jsonBuffer.createObject();
-  dat["water_temp"] = get_water_temp();
-  dat["analog_temp"] = get_analog_temp();
-  dat["environment_light"] = get_light_sensor();
+  dat["waterTemp"] = get_water_temp();
+  dat["analogTemp"] = get_analog_temp();
+  dat["lightIntensity"] = get_light_sensor();
+  dat["devices"] = "name";
   char buffer[256];
   dat.printTo(buffer, sizeof(buffer));
   return buffer;
