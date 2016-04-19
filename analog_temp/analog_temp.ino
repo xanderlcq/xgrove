@@ -2,13 +2,13 @@
   for more information see http://www.ladyada.net/make/logshield/lighttemp.html
   */
  
-#define aref_voltage 3.3         // we tie 3.3V to ARef and measure it with a multimeter!
+#define aref_voltage 5.0         // we tie 3.3V to ARef and measure it with a multimeter!
  
  
  
  
 //TMP36 Pin Variables
-int tempPin = 1;        //the analog pin the TMP36's Vout (sense) pin is connected to
+int tempPin = A3;        //the analog pin the TMP36's Vout (sense) pin is connected to
                         //the resolution is 10 mV / degree centigrade with a
                         //500 mV offset to allow for negative temperatures
                         // the analog reading from the sensor
@@ -18,7 +18,7 @@ void setup(void) {
   Serial.begin(9600);   
  
   // If you want to set the aref to something other than 5v
-  analogReference(EXTERNAL);
+  //analogReference(EXTERNAL);
 }
 float get_analog_temp(){
   int tempReading = analogRead(tempPin);  
@@ -32,5 +32,6 @@ float get_analog_temp(){
 }
  
 void loop(void) {
-
+Serial.println(get_analog_temp());
+delay(50);
 }

@@ -20,7 +20,7 @@ void setup(void)
 void loop(void)
 {
   Serial.println(getWaterTemp());
-  delay(200);
+  //delay(200);
   /*
     // call sensors.requestTemperatures() to issue a global temperature
     // request to all devices on the bus

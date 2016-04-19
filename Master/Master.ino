@@ -11,10 +11,10 @@ boolean stringComplete = false;  // whether the string is complete
 //Thresholds for water levels
 float bed1_dry = 2200;
 float bed2_dry = 1630;
-float bed3_dry = 1550;//R is high when water level is low
-float bed1_full = 1000;
-float bed2_full = 800;
-float bed3_full = 750;//R is low when water level is high
+float bed3_dry = 1400;//R is high when water level is low
+float bed1_full = 1000-25;
+float bed2_full = 800-25;
+float bed3_full = 750-25;//R is low when water level is high
 boolean b1_filling = false;
 boolean b2_filling = false;
 boolean b3_filling = false;
@@ -34,7 +34,7 @@ int valve1 = 5;
 int valve2 = 6;
 int valve3 = 7;
 //Sensros
-int tempPin = 1;
+#define tempPin A3
 //Lux/light sensor
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 // Data wire is plugged into port 10 on the Arduino
@@ -77,7 +77,7 @@ void serialEvent() {
 void loop() {
   // When commands come in hot 
   if (stringComplete) {
-    Serial.println(inputString);
+    //Serial.println(inputString);
     if(inputString == "get_all"){
       Serial.println(getAllSensors());
     }
@@ -87,11 +87,19 @@ void loop() {
   }
   //Always checking
   checkBedsLv();
+  //Serial.println(get_light_sensor());
+  
 }
 //====Communication==========
 String getAllSensors(){
-
-  return "";
+  StaticJsonBuffer<200> jsonBuffer;
+  JsonObject& dat = jsonBuffer.createObject();
+  dat["water_temp"] = get_water_temp();
+  dat["analog_temp"] = get_analog_temp();
+  dat["environment_light"] = get_light_sensor();
+  char buffer[256];
+  dat.printTo(buffer, sizeof(buffer));
+  return buffer;
 }
 //=============Controls============================
 //=============Water level control=================
@@ -278,7 +286,7 @@ void init_light_sensor(void) {
 
 }
 
-float get_light_sensor(void) {
+float get_light_sensor() {
   /* Get a new sensor event */
   sensors_event_t event;
   tsl.getEvent(&event);
@@ -310,7 +318,7 @@ float get_analog_temp() {
   return temperatureC;
 }
 
-float getWaterTemp() {
+float get_water_temp() {
   water_temp_sensors.requestTemperatures();// Send the command to get temperatures
   return water_temp_sensors.getTempCByIndex(0);
 }
