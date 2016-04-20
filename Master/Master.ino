@@ -90,7 +90,7 @@ void loop() {
   //Serial.println(get_light_sensor());
 
 }
-//analogTemp,digitalTemp,waterTemp,moisture,humidity,ph,mass,sound,airPressure
+//analogTemp,digitalTemp,waterTemp,moisture,humidity,ph,mass,sound,airPressure,
 //====Communication==========
 String getAllSensors() {
   StaticJsonBuffer<200> jsonBuffer;
