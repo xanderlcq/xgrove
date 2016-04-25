@@ -9,12 +9,12 @@ String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
 //Thresholds for water levels
-float bed1_dry = 2200;
-float bed2_dry = 1630;
-float bed3_dry = 1400;//R is high when water level is low
-float bed1_full = 1000 - 25;
-float bed2_full = 800 - 25;
-float bed3_full = 750 - 25; //R is low when water level is high
+float bed1_dry = 2300;
+float bed2_dry = 1530;
+float bed3_dry = 1300;//R is high when water level is low
+float bed1_full = 950;
+float bed2_full = 750;
+float bed3_full = 720; //R is low when water level is high
 boolean b1_filling = false;
 boolean b2_filling = false;
 boolean b3_filling = false;
@@ -56,7 +56,7 @@ void setup() {
   pinMode(7, OUTPUT);
   //analogReference(EXTERNAL);
   halt();
-  initialize_water();
+  //initialize_water();
   init_light_sensor();
   // reserve 200 bytes for the inputString:
   inputString.reserve(200);
@@ -88,7 +88,7 @@ void loop() {
   //Always checking
   checkBedsLv();
   //Serial.println(get_light_sensor());
-
+  //delay(5);
 }
 //analogTemp,digitalTemp,waterTemp,moisture,humidity,ph,mass,sound,airPressure,
 //====Communication==========
@@ -105,23 +105,29 @@ String getAllSensors() {
 }
 //=============Controls============================
 //=============Water level control=================
+int b1draining = 0;
+int b2draining = 0;
+int b3draining = 0;
 void checkBedsLv() {
   float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   //Serial.print(analogRead(A0));
-  Serial.print("Cyc: Bed1: " + String(bed1));
-  Serial.print("; Bed2: " + String(bed2));
-  Serial.println("; Bed3: " + String(bed3));
+  Serial.print("Cyc: Bed1: " + String(bed1)+";"+String(b1draining));
+  Serial.print("; Bed2: " + String(bed2)+";"+String(b2draining));
+  Serial.println("; Bed3: " + String(bed3)+";"+String(b3draining));
 
   if (bed1 < bed1_full) {
     b1_filling = false;
+    b1draining = 0;
   }
   if (bed2 < bed2_full) {
     b2_filling = false;
+    b2draining = 0;
   }
   if (bed3 < bed3_full) {
     b3_filling = false;
+    b3draining = 0;
   }
   if (bed1 > bed1_dry) {
     b1_filling = true;
@@ -132,21 +138,39 @@ void checkBedsLv() {
   if (bed3 > bed3_dry) {
     b3_filling = true;
   }
+  if(b1draining > 2500){
+    b1_filling = true;
+    b1draining = 0;
+  }
+  if(b2draining > 1000){
+    b2_filling = true;
+    b2draining = 0;
+  }
+  if(b3draining > 1000){
+    b3_filling = true;
+    b3draining=0;
+  }
+  
   if (b1_filling) {
     fill(1);
   } else {
+    b1draining++;
     drain(1);
   }
   if (b2_filling) {
+    
     fill(2);
   } else {
+    b2draining++;
     drain(2);
   }
   if (b3_filling) {
     fill(3);
   } else {
+    b3draining++;
     drain(3);
   }
+  
 }
 void initialize_water() {
   drain(1);
