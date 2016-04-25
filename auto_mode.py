@@ -122,7 +122,7 @@ def init_secondary_thread():
 
 
 def api_upload(data_string):
-    params = {'username':+API_USERNAME, 'api_key': API_KEY, 'format':'json'}
+    params = {'username':API_USERNAME, 'api_key': API_KEY, 'format':'json'}
     headers = {'content-type': 'application/json'}
     requests.post(API_URL, params=params, data=data_string, headers=headers)
 
@@ -137,19 +137,22 @@ if is_internet_on():
     # Initialize Arduino (Required)
     init_arduino()
     # Initialize TCP
-    init_tcp()
+    #nit_tcp()
     # Initialize Secondary Thread
-    init_secondary_thread()
+    #init_secondary_thread()
     # All initialization done
     print 'All initialization done\n'
+    time.sleep(5)
     print 'Starting Loop\n'
     while True:
         if mode == Mode_record:
             try:
-                arduino_serial.write("pull_all")
+                arduino_serial.write("get_all\n")
+                #arduino_serial.flush()
                 data = arduino_serial.readline()
+                print data
                 api_upload(data)
-                for i in range(60):
+                for i in range(5):
                     time.sleep(1)
                     if mode == Mode_control:
                         break

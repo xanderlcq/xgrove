@@ -78,7 +78,7 @@ void loop() {
   // When commands come in hot
   if (stringComplete) {
     //Serial.println(inputString);
-    if (inputString == "get_all") {
+    if (inputString == "get_all\n") {
       Serial.println(getAllSensors());
     }
     // clear the string:
@@ -113,10 +113,11 @@ void checkBedsLv() {
   float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   //Serial.print(analogRead(A0));
+  /**
   Serial.print("Cyc: Bed1: " + String(bed1)+";"+String(b1draining));
   Serial.print("; Bed2: " + String(bed2)+";"+String(b2draining));
   Serial.println("; Bed3: " + String(bed3)+";"+String(b3draining));
-
+*/
   if (bed1 < bed1_full) {
     b1_filling = false;
     b1draining = 0;
@@ -261,7 +262,7 @@ void fill(int bed) {
 //================For sensors===============
 void displayLightSensorDetails(void) {
   sensor_t sensor;
-  tsl.getSensor(&sensor);
+  tsl.getSensor(&sensor);/*
   Serial.println("------------------------------------");
   Serial.print  ("Sensor:       "); Serial.println(sensor.name);
   Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);
@@ -270,7 +271,7 @@ void displayLightSensorDetails(void) {
   Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" lux");
   Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");
   Serial.println("------------------------------------");
-  Serial.println("");
+  Serial.println("");*/
   delay(500);
 }
 
@@ -286,10 +287,10 @@ void configureLightSensor(void) {
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */
 
   /* Update these values depending on what you've set above! */
-  Serial.println("------------------------------------");
+  /*Serial.println("------------------------------------");
   Serial.print  ("Gain:         "); Serial.println("Auto");
   Serial.print  ("Timing:       "); Serial.println("13 ms");
-  Serial.println("------------------------------------");
+  Serial.println("------------------------------------");*/
 }
 
 void init_light_sensor(void) {
@@ -306,9 +307,6 @@ void init_light_sensor(void) {
 
   /* Setup the sensor gain and integration time */
   configureLightSensor();
-
-  /* We're ready to go! */
-  Serial.println("");
 
 }
 
