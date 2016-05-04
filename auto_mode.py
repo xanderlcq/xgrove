@@ -76,7 +76,7 @@ def connect_arduino():
     try:
         device_list = glob.glob('/dev/tty.usb*')
         print device_list[0]
-        ser = serial.Serial(device_list[0],9600)
+        ser = serial.Serial(device_list[0],250000)
         return ser
     except IndexError:
         return None
@@ -148,8 +148,10 @@ if is_internet_on():
         if mode == Mode_record:
             try:
                 arduino_serial.write("get_all\n")
-                #arduino_serial.flush()
+                arduino_serial.flush()
                 data = arduino_serial.readline()
+                data = '{"device":{"id":"4"},'+data[1:]
+                # check if it's correct jason TO-DO
                 print data
                 api_upload(data)
                 for i in range(5):
