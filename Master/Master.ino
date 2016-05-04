@@ -112,11 +112,11 @@ void loop() {
 
   // When commands come in hot
   if (stringComplete) {
-    if (inputString == "get_all\n") {
-      Serial.println(getAllSensors());
-    } else {
+    int command = inputString.toInt();
 
-    }
+    //if (inputString == "get_all\n") {
+    //Serial.println(getAllSensors());
+    //}
     inputString = "";
     stringComplete = false;
   }
@@ -135,37 +135,65 @@ String getAllSensors() {
   dat["air_pressure"] = bme.readPressure() / 100.0F;
   dat["digital_temp"] = bme.readTemperature();
   dat["humidity"] = bme.readHumidity();
-  
+
   dat["bed_cycling"] = bed_state;
-  if(bed_state == 1) dat["bed_state"] = b1_filling;
-  if(bed_state == 2) dat["bed_state"] = b2_filling;
-  if(bed_state == 3) dat["bed_state"] = b3_filling;
-  
+  if (bed_state == 1) dat["bed_state"] = b1_filling;
+  if (bed_state == 2) dat["bed_state"] = b2_filling;
+  if (bed_state == 3) dat["bed_state"] = b3_filling;
+
   char buffer[256];
   dat.printTo(buffer, sizeof(buffer));
   return buffer;
 }
 
-void updateCommand(String input) {
-  if (input.indexOf("command") != -1 ) {
-if(input.indexOf("light_1")!= -1){
-  
-}
-if(input.indexOf("light_2")!= -1){
-  
-}
-if(input.indexOf("light_3")!= -1){
-  
-}
-if(input.indexOf("water_1")!= -1){
-  
-}
-if(input.indexOf("water_2")!= -1){
-  
-}
-if(input.indexOf("water_3")!= -1){
-  
-}
+void exeCommand(int input) {
+
+  switch (input) {
+    case 11:
+      Serial.println(getAllSensors());
+      break;
+    case 12:
+      //switch to real time control
+      break;
+    case 13:
+      //switch to auto
+      break;
+    case 21:
+      bed1light = true;
+      break;
+    case 22:
+      bed1light = false;
+      break;
+    case 23:
+      bed2light = true;
+      break;
+    case 24:
+      bed2light = false;
+      break;
+    case 25:
+      bed3light = true;
+      break;
+    case 26:
+      bed3light = false;
+      break;
+    case 31:
+      bed1water = true;
+      break;
+    case 32:
+      bed1water = false;
+      break;
+    case 33:
+      bed2water = true;
+      break;
+    case 34:
+      bed2water = false;
+      break;
+    case 35:
+      bed3water = true;
+      break;
+    case 36:
+      bed3water = false;
+      break;
   }
 }
 //=============Controls============================
