@@ -135,6 +135,12 @@ String getAllSensors() {
   dat["air_pressure"] = bme.readPressure() / 100.0F;
   dat["digital_temp"] = bme.readTemperature();
   dat["humidity"] = bme.readHumidity();
+  
+  dat["bed_cycling"] = bed_state;
+  if(bed_state == 1) dat["bed_state"] = b1_filling;
+  if(bed_state == 2) dat["bed_state"] = b2_filling;
+  if(bed_state == 3) dat["bed_state"] = b3_filling;
+  
   char buffer[256];
   dat.printTo(buffer, sizeof(buffer));
   return buffer;
