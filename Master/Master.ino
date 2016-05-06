@@ -12,32 +12,32 @@
 #define BME_MOSI 11
 #define BME_CS 10
 #define SEALEVELPRESSURE_HPA (1013.25)
-
+float b1_draining_time = 0;
+float b2_draining_time = 0;
+float b3_draining_time = 0;
 Adafruit_BME280 bme; // I2C
-
+boolean debug = false;
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
 // Boolean swtiches
-boolean bed1water = true;
-boolean bed2water = true;
-boolean bed3water = true;
-boolean bed1light = true;
-boolean bed2light = true;
-boolean bed3light = true;
+boolean bed1_cycling = true;
+boolean bed2_cycling = true;
+boolean bed3_cycling = true;
+boolean bed1_light_on = false;
+boolean bed2_light_on = false;
+boolean bed3_light_on = false;
 
 
 //Thresholds for water levels
-float b1draining = 0;
-float b2draining = 0;
-float b3draining = 0;
+
 int bed_state = 1;
 float bed1_dry = 2100;
 float bed2_dry = 1600;
 float bed3_dry = 1300;//R is high when water level is low
-float bed1_full = 1100;
-float bed2_full = 900;
-float bed3_full = 800; //R is low when water level is high
+float bed1_full = 1000;
+float bed2_full = 840;
+float bed3_full = 670; //R is low when water level is high
 boolean b1_filling = true;
 boolean b2_filling = false;
 boolean b3_filling = false;
@@ -49,17 +49,17 @@ float SERIESRESISTOR = 560.0;
 #define aref_voltage 5.0
 //Out put
 //Lights
-int light1 = 21;
-int light2 = 22;
-int light3 = 23;
+int light1 = 5;
+int light2 = 6;
+int light3 = 7;
 //Pumps
 int pump1 = 2;
 int pump2 = 3;
 int pump3 = 4;
 //Valves
-int valve1 = 5;
-int valve2 = 6;
-int valve3 = 7;
+int valve1 = 35;
+int valve2 = 36;
+int valve3 = 37;
 //Sensros
 #define tempPin A3
 //Lux/light sensor
@@ -74,26 +74,26 @@ DallasTemperature water_temp_sensors(&oneWire);
 void setup() {
   Serial.begin(250000);
   // Start up the library
-  water_temp_sensors.begin();
+  //water_temp_sensors.begin();
   pinMode(2, OUTPUT);
   pinMode(3, OUTPUT);
   pinMode(4, OUTPUT);
   pinMode(5, OUTPUT);
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
-  pinMode(21, OUTPUT);
-  pinMode(22, OUTPUT);
-  pinMode(23, OUTPUT);
+  pinMode(8, OUTPUT);
+
   //analogReference(EXTERNAL);
-  halt();
+  halt_cycle();
   //initialize_water();
-  init_light_sensor();
+  // init_light_sensor();
   // reserve 200 bytes for the inputString:
   inputString.reserve(200);
   if (!bme.begin()) {
     //Serial.println("Could not find a valid BME280 sensor, check wiring!");
-    while (1);
+    //while (1);
   }
+  Serial.println("ready");
 }
 void serialEvent() {
   while (Serial.available()) {
@@ -112,21 +112,25 @@ void loop() {
 
   // When commands come in hot
   if (stringComplete) {
-    int command = inputString.toInt();
-
+    //Serial.println(inputString);
+    int command = inputString.substring(0, 2).toInt();
+    execute_command(command);
     //if (inputString == "get_all\n") {
-    //Serial.println(getAllSensors());
+    //Serial.println(get_all_sensors());
     //}
     inputString = "";
     stringComplete = false;
   }
+
+
   //always checking bed
-  checkBedsLv1();
+  refresh_light();
+  cycle_water();
   delay(1);
 }
 
 //====Communication==========
-String getAllSensors() {
+String get_all_sensors() {
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& dat = jsonBuffer.createObject();
   dat["water_temp"] = get_water_temp();
@@ -137,20 +141,26 @@ String getAllSensors() {
   dat["humidity"] = bme.readHumidity();
 
   dat["bed_cycling"] = bed_state;
-  if (bed_state == 1) dat["bed_state"] = b1_filling;
-  if (bed_state == 2) dat["bed_state"] = b2_filling;
-  if (bed_state == 3) dat["bed_state"] = b3_filling;
+  if (bed_state == 1) dat["bed_filling"] = b1_filling;
+  if (bed_state == 2) dat["bed_filling"] = b2_filling;
+  if (bed_state == 3) dat["bed_filling"] = b3_filling;
 
   char buffer[256];
   dat.printTo(buffer, sizeof(buffer));
   return buffer;
 }
 
-void exeCommand(int input) {
+void execute_command(int input) {
 
   switch (input) {
+    case 00:
+      debug = true;
+      break;
+    case 01:
+      debug = false;
+      break;
     case 11:
-      Serial.println(getAllSensors());
+      Serial.println(get_all_sensors());
       break;
     case 12:
       //switch to real time control
@@ -159,137 +169,131 @@ void exeCommand(int input) {
       //switch to auto
       break;
     case 21:
-      bed1light = true;
+      bed1_light_on = true;
       break;
     case 22:
-      bed1light = false;
+      bed1_light_on = false;
       break;
     case 23:
-      bed2light = true;
+      bed2_light_on = true;
       break;
     case 24:
-      bed2light = false;
+      bed2_light_on = false;
       break;
     case 25:
-      bed3light = true;
+      bed3_light_on = true;
       break;
     case 26:
-      bed3light = false;
+      bed3_light_on = false;
       break;
     case 31:
-      bed1water = true;
+      bed1_cycling = true;
       break;
     case 32:
-      bed1water = false;
+      bed1_cycling = false;
       break;
     case 33:
-      bed2water = true;
+      bed2_cycling = true;
       break;
     case 34:
-      bed2water = false;
+      bed2_cycling = false;
       break;
     case 35:
-      bed3water = true;
+      bed3_cycling = true;
       break;
     case 36:
-      bed3water = false;
+      bed3_cycling = false;
       break;
   }
 }
 //=============Controls============================
 //=============Water level control=================
-void checkBedsLv1() {
-  //Serial.print(bed_state);
-  //Serial.print("||");
+void cycle_water() {
+
   float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  //Serial.print(analogRead(A0));
-  boolean p = false;
-  if (p) {
-    Serial.print("Cyc: Bed1: " + String(bed1) + ";" + String(millis() - b1draining));
-    Serial.print("; Bed2: " + String(bed2) + ";" + String(millis() - b2draining));
-    Serial.println("; Bed3: " + String(bed3) + ";" + String(millis() - b3draining));
+  if (debug) {
+    Serial.print("Cyc: Bed1: " + String(bed1) + ";" + String(millis() - b1_draining_time));
+    Serial.print("; Bed2: " + String(bed2) + ";" + String(millis() - b2_draining_time));
+    Serial.println("; Bed3: " + String(bed3) + ";" + String(millis() - b3_draining_time));
   }
+
+
   if (bed_state == 1) {
-    if (bed1water) {
-      if (b1_filling && bed1 < bed1_full) {
+    if (bed1_cycling) {
+      if (b1_filling && bed1 < bed1_full) {//if bed 1 is full
         b1_filling = false;
-        b1draining = millis();
+        b1_draining_time = millis();
       }
-      if (!b1_filling && (bed1 > bed1_dry || millis() - b1draining > 120000)) {
-        b2_filling = true;
-        b1draining = millis();
-        bed_state = 2;
+      if (!b1_filling && (bed1 > bed1_dry || millis() - b1_draining_time > 120000)) {//if bed 1 is dry
+        b1_filling = false;
+        //turn on next bed available
       }
-    } else {
-      b1_filling = false;
-      b2_filling = true;
-      bed_state = 2;
     }
+
   } else if (bed_state == 2) {
-    if (bed1water) {
+    if (bed2_cycling) {
       if (b2_filling && bed2 < bed2_full) {
         b2_filling = false;
-        b2draining = millis();
+        b2_draining_time = millis();
       }
-      if (!b2_filling && (bed2 > bed2_dry || millis() - b2draining > 90000)) {
+      if (!b2_filling && (bed2 > bed2_dry || millis() - b2_draining_time > 90000)) {
         b3_filling = true;
-        b2draining = millis();
+        b2_draining_time = millis();
         bed_state = 3;
       }
     } else {
       b2_filling = false;
-      b3_filling = true;
-      bed_state = 3;
+      //turn on next bed available
     }
   } else if (bed_state == 3) {
-    if (bed1water) {
+    if (bed3_cycling) {
       if (b3_filling && bed3 < bed3_full) {
         b3_filling = false;
-        b3draining = millis();
+        b3_draining_time = millis();
       }
-      if (!b3_filling && (bed3 > bed3_dry || millis() - b3draining > 90000)) {
+      if (!b3_filling && (bed3 > bed3_dry || millis() - b3_draining_time > 90000)) {
         b1_filling = true;
-        b3draining = millis();
+        b3_draining_time = millis();
         bed_state = 1;
       }
     } else {
       b3_filling = false;
-      b1_filling = true;
-      bed_state = 1;
+      //turn on next bed available
     }
   }
+  refresh_bed()
+}
+void refresh_bed() {
   if (b1_filling) {
-    fill(1);
+    fill_bed(1);
   } else {
-    drain(1);
+    drain_bed(1);
   }
   if (b2_filling) {
-    fill(2);
+    fill_bed(2);
   } else {
-    drain(2);
+    drain_bed(2);
   }
   if (b3_filling) {
-    fill(3);
+    fill_bed(3);
   } else {
-    drain(3);
+    drain_bed(3);
   }
-
 }
-
-void refreshLight() {
-  if (bed1light) {
+void refresh_light() {
+  if (bed1_light_on) {
     digitalWrite(light1, LOW);
   } else {
     digitalWrite(light1, HIGH);
   }
-  if (bed2light) {
+  if (bed2_light_on) {
     digitalWrite(light2, LOW);
   } else {
     digitalWrite(light2, HIGH);
   }
-  if (bed3light) {
+  if (bed3_light_on) {
     digitalWrite(light3, LOW);
   } else {
     digitalWrite(light3, HIGH);
@@ -297,64 +301,7 @@ void refreshLight() {
 
 
 }
-//depricated
-void checkBedsLv() {
-  float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  //Serial.print(analogRead(A0));
-  boolean p = false;
-  if (p) {
-    Serial.print("Cyc: Bed1: " + String(bed1) + ";" + String(millis() - b1draining));
-    Serial.print("; Bed2: " + String(bed2) + ";" + String(millis() - b2draining));
-    Serial.println("; Bed3: " + String(bed3) + ";" + String(millis() - b3draining));
-  } else {
-    //delay(20);
-  }
-  if (b1_filling && bed1 < bed1_full) {
-    b1_filling = false;
-    b1draining = millis();
-  }
-  if (b2_filling && bed2 < bed2_full) {
-    b2_filling = false;
-    b2draining = millis();
-  }
-  if (b3_filling && bed3 < bed3_full) {
-    b3_filling = false;
-    b3draining = millis();
-  }
-  if (!b1_filling && (bed1 > bed1_dry || millis() - b1draining > 120000)) {
-    b1_filling = true;
-    b1draining = 0;
-  }
-  if (!b2_filling && (bed2 > bed2_dry || millis() - b2draining > 90000)) {
-    b2_filling = true;
-    b2draining = 0;
-  }
-  if (!b3_filling && (bed3 > bed3_dry || millis() - b3draining > 90000)) {
-    b3_filling = true;
-    b3draining = 0;
-  }
-
-  if (b1_filling) {
-    fill(1);
-  } else {
-    drain(1);
-  }
-  if (b2_filling) {
-    fill(2);
-  } else {
-    drain(2);
-  }
-  if (b3_filling) {
-    fill(3);
-  } else {
-    drain(3);
-  }
-
-}
-
-void halt() {
+void halt_cycle() {
   pause_cycle(1);
   pause_cycle(2);
   pause_cycle(3);
@@ -377,7 +324,7 @@ void pause_cycle(int bed) {
     return;
   }
 }
-void drain(int bed) {
+void drain_bed(int bed) {
   if (bed == 1) {
     digitalWrite(valve1, LOW); //open valve
     digitalWrite(pump1, HIGH); //turn off pump
@@ -394,7 +341,7 @@ void drain(int bed) {
     return;
   }
 }
-void fill(int bed) {
+void fill_bed(int bed) {
   if (bed == 1) {
     digitalWrite(valve1, HIGH); //shut off valve
     digitalWrite(pump1, LOW); //turn on pump
@@ -412,7 +359,7 @@ void fill(int bed) {
   }
 }
 //================For sensors===============
-void displayLightSensorDetails() {
+void display_light_sensor_details() {
   sensor_t sensor;
   tsl.getSensor(&sensor);/*
   Serial.println("------------------------------------");
@@ -427,7 +374,7 @@ void displayLightSensorDetails() {
   delay(50);
 }
 
-void configureLightSensor() {
+void configure_light_sensor() {
   /* You can also manually set the gain or enable auto-gain support */
   // tsl.setGain(TSL2561_GAIN_1X);      /* No gain ... use in bright light to avoid sensor saturation */
   // tsl.setGain(TSL2561_GAIN_16X);     /* 16x gain ... use in low light to boost sensitivity */
@@ -455,10 +402,10 @@ void init_light_sensor() {
   }
 
   /* Display some basic information on this sensor */
-  displayLightSensorDetails();
+  display_light_sensor_details();
 
   /* Setup the sensor gain and integration time */
-  configureLightSensor();
+  configure_light_sensor();
 
   /* We're ready to go! */
 
