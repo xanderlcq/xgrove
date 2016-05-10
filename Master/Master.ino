@@ -39,8 +39,8 @@ float bed1_full = 1000;
 float bed2_full = 840;
 float bed3_full = 670; //R is low when water level is high
 boolean b1_filling = true;
-boolean b2_filling = false;
-boolean b3_filling = false;
+boolean b2_filling = true;
+boolean b3_filling = true;
 //Water level sensors
 #define Water_Lv_1 A0
 #define Water_Lv_2 A1
@@ -85,7 +85,7 @@ void setup() {
 
   //analogReference(EXTERNAL);
   halt_cycle();
-  //initialize_water();
+
   // init_light_sensor();
   // reserve 200 bytes for the inputString:
   inputString.reserve(200);
@@ -159,6 +159,13 @@ void execute_command(int input) {
     case 01:
       debug = false;
       break;
+    case 02:
+      Serial.println(get_next_bed(-1));
+      Serial.println(get_next_bed(1));
+      Serial.println(get_next_bed(2));
+      Serial.println(get_next_bed(3));
+      Serial.println("===");
+      break;
     case 11:
       Serial.println(get_all_sensors());
       break;
@@ -209,74 +216,139 @@ void execute_command(int input) {
 //=============Controls============================
 //=============Water level control=================
 void cycle_water() {
-
-  float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  if (debug) {
-    Serial.print("Cyc: Bed1: " + String(bed1) + ";" + String(millis() - b1_draining_time));
-    Serial.print("; Bed2: " + String(bed2) + ";" + String(millis() - b2_draining_time));
-    Serial.println("; Bed3: " + String(bed3) + ";" + String(millis() - b3_draining_time));
-  }
-
-
+  if (debug)print_all_beds();
+  Serial.print(b1_filling);
+  Serial.print(b2_filling);
+  Serial.print(b3_filling);
+  Serial.print("||");
+  Serial.print(bed1_cycling);
+  Serial.print(bed2_cycling);
+  Serial.print(bed3_cycling);
+  Serial.print("||");
+  Serial.println(bed_state);
+  if (bed_state == -1) bed_state = get_next_bed(1);
   if (bed_state == 1) {
     if (bed1_cycling) {
-      if (b1_filling && bed1 < bed1_full) {//if bed 1 is full
+      if (b1_filling && is_full(1)) {
         b1_filling = false;
-        b1_draining_time = millis();
+        reset_drain_timer(1);
       }
-      if (!b1_filling && (bed1 > bed1_dry || millis() - b1_draining_time > 120000)) {//if bed 1 is dry
-        b1_filling = false;
-        //turn on next bed available
-      }
-    }
-
-  } else if (bed_state == 2) {
-    if (bed2_cycling) {
-      if (b2_filling && bed2 < bed2_full) {
-        b2_filling = false;
-        b2_draining_time = millis();
-      }
-      if (!b2_filling && (bed2 > bed2_dry || millis() - b2_draining_time > 90000)) {
-        b3_filling = true;
-        b2_draining_time = millis();
-        bed_state = 3;
+      if ((!b1_filling) && is_empty(1)) {
+        b1_filling = true;
+        bed_state = get_next_bed(1);
       }
     } else {
-      b2_filling = false;
-      //turn on next bed available
+      bed_state = get_next_bed(1);
+    }
+  } else if (bed_state == 2) {
+    if (bed2_cycling) {
+      if (b2_filling && is_full(2)) {
+        Serial.println("!!!!!!");
+        b2_filling = false;
+        reset_drain_timer(2);
+      }
+      if ((!b2_filling) && is_empty(2)) {
+        b2_filling = true;
+        bed_state = get_next_bed(2);
+      }
+    } else {
+      bed_state = get_next_bed(2);
     }
   } else if (bed_state == 3) {
     if (bed3_cycling) {
-      if (b3_filling && bed3 < bed3_full) {
+      if (b3_filling && is_full(3)) {
         b3_filling = false;
-        b3_draining_time = millis();
+        reset_drain_timer(3);
       }
-      if (!b3_filling && (bed3 > bed3_dry || millis() - b3_draining_time > 90000)) {
-        b1_filling = true;
-        b3_draining_time = millis();
-        bed_state = 1;
+      if ((!b3_filling) && is_empty(3)) {
+        b3_filling = true;
+        bed_state = get_next_bed(3);
       }
     } else {
-      b3_filling = false;
-      //turn on next bed available
+      bed_state = get_next_bed(3);
     }
   }
-  refresh_bed()
+  refresh_bed();
+
+
 }
+boolean is_full(int bed) {
+  float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  if (bed == 1) return bed1 < bed1_full;
+  if (bed == 2) return bed2 < bed2_full;
+  if (bed == 3) return bed3 < bed3_full;
+}
+boolean is_empty(int bed) {
+  float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  if (bed == 1) return (bed1 > bed1_dry || millis() - b1_draining_time > 120000/2);
+  if (bed == 2) return (bed2 > bed2_dry || millis() - b2_draining_time > 90000/2);
+  if (bed == 3) return (bed3 > bed3_dry || millis() - b3_draining_time > 90000/2);
+}
+void print_all_beds() {
+  float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
+  Serial.print("Cyc: Bed1: " + String(bed1) + ";" + String(millis() - b1_draining_time));
+  Serial.print("; Bed2: " + String(bed2) + ";" + String(millis() - b2_draining_time));
+  Serial.println("; Bed3: " + String(bed3) + ";" + String(millis() - b3_draining_time));
+}
+
+void reset_drain_timer(int bed) {
+  if (bed == 1) b1_draining_time = millis();
+  if (bed == 2) b2_draining_time = millis();
+  if (bed == 3) b3_draining_time = millis();
+}
+int get_next_bed(int current) {
+  if (!bed1_cycling && !bed2_cycling && !bed3_cycling) return -1;
+  int beds[] = {bed1_cycling, bed2_cycling, bed3_cycling};
+  if (current == 1) {
+    if (bed2_cycling == true) return 2;
+    else if (bed3_cycling == true) return 3;
+    else return 1;
+  }
+  if (current == 2) {
+    if (bed3_cycling == true) return 3;
+    else if (bed1_cycling == true) return 1;
+    else return 2;
+  }
+  if (current == 3) {
+    if (bed1_cycling == true) return 1;
+    else if (bed2_cycling == true) return 2;
+    else return 3;
+  }
+  if (current == -1) {
+    if (bed1_cycling == true) return 1;
+    else if (bed2_cycling == true) return 2;
+    else return 3;
+  }
+  /*
+    int i = current;
+    while (true) {
+    if (i >= sizeof(beds)) i = 0;
+    if (beds[i] == 1) {
+      i++;
+      return i;
+    }
+    i++;
+    }*/
+}
+
 void refresh_bed() {
-  if (b1_filling) {
+  if (b1_filling && bed_state == 1) {
     fill_bed(1);
   } else {
     drain_bed(1);
   }
-  if (b2_filling) {
+  if (b2_filling && bed_state == 2) {
     fill_bed(2);
   } else {
     drain_bed(2);
   }
-  if (b3_filling) {
+  if (b3_filling && bed_state == 3) {
     fill_bed(3);
   } else {
     drain_bed(3);
