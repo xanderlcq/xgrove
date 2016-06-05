@@ -20,7 +20,7 @@ boolean debug = false;
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
-// Boolean swtiches
+//Booleans for controlling the state of water cycling and light on/off
 boolean bed1_cycling = true;
 boolean bed2_cycling = true;
 boolean bed3_cycling = true;
@@ -28,42 +28,41 @@ boolean bed1_light_on = false;
 boolean bed2_light_on = false;
 boolean bed3_light_on = false;
 
-
-//Thresholds for water levels
-
+//Current cycling bed
 int bed_state = 1;
-float bed1_dry = 2100;
-float bed2_dry = 1600;
-float bed3_dry = 1300;//R is high when water level is low
-float bed1_full = 1000;
-float bed2_full = 840;
-float bed3_full = 670; //R is low when water level is high
+//If the bed should be filling or draining
 boolean b1_filling = true;
 boolean b2_filling = true;
 boolean b3_filling = true;
-//Water level sensors
-#define Water_Lv_1 A0
-#define Water_Lv_2 A1
-#define Water_Lv_3 A2
-float SERIESRESISTOR = 560.0;
-#define aref_voltage 5.0
-//Out put
-//Lights
+
+//Thresholds for water levels
+float bed1_dry = 2100;
+float bed2_dry = 1600;
+float bed3_dry = 1300;//R is high when water level is low, DO NOT CHANGE
+float bed1_full = 1100;
+float bed2_full = 920;
+float bed3_full = 660; //R is low when water level is high
+
+//Lights relays
 int light1 = 5;
 int light2 = 6;
 int light3 = 7;
-//Pumps
+//Pumps relays
 int pump1 = 2;
 int pump2 = 3;
 int pump3 = 4;
-//Valves
+//Valves (NO LONGER IN USE)
 int valve1 = 35;
 int valve2 = 36;
 int valve3 = 37;
-//Sensros
+
+//Sensors
+// temp36 analog temperature sensor
 #define tempPin A3
 //Lux/light sensor
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
+
+// water temperature sensor
 // Data wire is plugged into port 10 on the Arduino
 #define ONE_WIRE_BUS 10
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -71,10 +70,19 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature water_temp_sensors(&oneWire);
 
+//Water level sensors
+#define Water_Lv_1 A0
+#define Water_Lv_2 A1
+#define Water_Lv_3 A2
+// resister for analog water level sensors
+float SERIESRESISTOR = 560.0;
+// referene voltage for analog sensors
+#define aref_voltage 5.0
+
 void setup() {
-  Serial.begin(250000);
+  Serial.begin(9600);
   // Start up the library
-  //water_temp_sensors.begin();
+  water_temp_sensors.begin();
   pinMode(2, OUTPUT);
   pinMode(3, OUTPUT);
   pinMode(4, OUTPUT);
@@ -82,19 +90,17 @@ void setup() {
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
   pinMode(8, OUTPUT);
-
-  //analogReference(EXTERNAL);
+  refresh_light();
   halt_cycle();
 
-  // init_light_sensor();
-  // reserve 200 bytes for the inputString:
+  init_light_sensor();
+  //reserve 200 bytes for the inputString:
   inputString.reserve(200);
   if (!bme.begin()) {
-    //Serial.println("Could not find a valid BME280 sensor, check wiring!");
-    //while (1);
+    Serial.println("Could not find a valid BME280 sensor, check wiring!");
   }
-  Serial.println("ready");
 }
+// This method is executed between each loop() to check if there's a complete string input from the serial or not
 void serialEvent() {
   while (Serial.available()) {
     // get the new byte:
@@ -109,21 +115,17 @@ void serialEvent() {
   }
 }
 void loop() {
-
-  // When commands come in hot
+  // When commands comes in
   if (stringComplete) {
     //Serial.println(inputString);
-    int command = inputString.substring(0, 2).toInt();
+    int command = inputString.substring(0, 2).toInt();//Strip it
     execute_command(command);
-    //if (inputString == "get_all\n") {
-    //Serial.println(get_all_sensors());
-    //}
-    inputString = "";
+    inputString = "";//reset inputStrings
     stringComplete = false;
   }
 
 
-  //always checking bed
+  //always checking beds and waters
   refresh_light();
   cycle_water();
   delay(1);
@@ -139,19 +141,22 @@ String get_all_sensors() {
   dat["air_pressure"] = bme.readPressure() / 100.0F;
   dat["digital_temp"] = bme.readTemperature();
   dat["humidity"] = bme.readHumidity();
-
   dat["bed_cycling"] = bed_state;
-  if (bed_state == 1) dat["bed_filling"] = b1_filling;
-  if (bed_state == 2) dat["bed_filling"] = b2_filling;
-  if (bed_state == 3) dat["bed_filling"] = b3_filling;
-
+  if (bed_state == 1) dat["is_filling"] = b1_filling?"1":"";
+  if (bed_state == 2) dat["is_filling"] = b2_filling?"1":"";
+  if (bed_state == 3) dat["is_filling"] = b3_filling?"1":"";
+  dat["light_0"] = bed1_light_on ? "1" : "";
+  dat["light_1"] = bed2_light_on ? "1" : "";
+  dat["light_2"] = bed3_light_on ? "1" : "";
+  dat["water_0"] = bed1_cycling ? "1" : "";
+  dat["water_1"] = bed2_cycling ? "1" : "";
+  dat["water_2"] = bed3_cycling ? "1" : "";
   char buffer[256];
   dat.printTo(buffer, sizeof(buffer));
   return buffer;
 }
 
 void execute_command(int input) {
-
   switch (input) {
     case 00:
       debug = true;
@@ -217,15 +222,6 @@ void execute_command(int input) {
 //=============Water level control=================
 void cycle_water() {
   if (debug)print_all_beds();
-  Serial.print(b1_filling);
-  Serial.print(b2_filling);
-  Serial.print(b3_filling);
-  Serial.print("||");
-  Serial.print(bed1_cycling);
-  Serial.print(bed2_cycling);
-  Serial.print(bed3_cycling);
-  Serial.print("||");
-  Serial.println(bed_state);
   if (bed_state == -1) bed_state = get_next_bed(1);
   if (bed_state == 1) {
     if (bed1_cycling) {
@@ -243,7 +239,6 @@ void cycle_water() {
   } else if (bed_state == 2) {
     if (bed2_cycling) {
       if (b2_filling && is_full(2)) {
-        Serial.println("!!!!!!");
         b2_filling = false;
         reset_drain_timer(2);
       }
@@ -284,9 +279,9 @@ boolean is_empty(int bed) {
   float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed3 = (aref_voltage / ((analogRead(Water_Lv_3) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
-  if (bed == 1) return (bed1 > bed1_dry || millis() - b1_draining_time > 120000/2);
-  if (bed == 2) return (bed2 > bed2_dry || millis() - b2_draining_time > 90000/2);
-  if (bed == 3) return (bed3 > bed3_dry || millis() - b3_draining_time > 90000/2);
+  if (bed == 1) return (bed1 > bed1_dry || millis() - b1_draining_time > 120000 / 2);
+  if (bed == 2) return (bed2 > bed2_dry || millis() - b2_draining_time > 90000 / 2);
+  if (bed == 3) return (bed3 > bed3_dry || millis() - b3_draining_time > 90000 / 2);
 }
 void print_all_beds() {
   float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
@@ -295,6 +290,15 @@ void print_all_beds() {
   Serial.print("Cyc: Bed1: " + String(bed1) + ";" + String(millis() - b1_draining_time));
   Serial.print("; Bed2: " + String(bed2) + ";" + String(millis() - b2_draining_time));
   Serial.println("; Bed3: " + String(bed3) + ";" + String(millis() - b3_draining_time));
+  Serial.print(b1_filling);
+  Serial.print(b2_filling);
+  Serial.print(b3_filling);
+  Serial.print("||");
+  Serial.print(bed1_cycling);
+  Serial.print(bed2_cycling);
+  Serial.print(bed3_cycling);
+  Serial.print("||");
+  Serial.println(bed_state);
 }
 
 void reset_drain_timer(int bed) {
