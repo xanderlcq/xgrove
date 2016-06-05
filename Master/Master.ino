@@ -132,6 +132,7 @@ void loop() {
 }
 
 //====Communication==========
+//return sensors' data in a json string
 String get_all_sensors() {
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& dat = jsonBuffer.createObject();
@@ -155,7 +156,7 @@ String get_all_sensors() {
   dat.printTo(buffer, sizeof(buffer));
   return buffer;
 }
-
+//this function takes numerical command and executes other functions
 void execute_command(int input) {
   switch (input) {
     case 00:
@@ -220,6 +221,7 @@ void execute_command(int input) {
 }
 //=============Controls============================
 //=============Water level control=================
+//This function cycle the bed, it is called every loop
 void cycle_water() {
   if (debug)print_all_beds();
   if (bed_state == -1) bed_state = get_next_bed(1);
@@ -267,6 +269,7 @@ void cycle_water() {
 
 
 }
+//Return true if the bed is full
 boolean is_full(int bed) {
   float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
@@ -275,6 +278,7 @@ boolean is_full(int bed) {
   if (bed == 2) return bed2 < bed2_full;
   if (bed == 3) return bed3 < bed3_full;
 }
+//Return true if the bed is empty
 boolean is_empty(int bed) {
   float bed1 = (aref_voltage / ((analogRead(Water_Lv_1) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
   float bed2 = (aref_voltage / ((analogRead(Water_Lv_2) * aref_voltage) / 1024.0) - 1) * SERIESRESISTOR;
@@ -300,12 +304,13 @@ void print_all_beds() {
   Serial.print("||");
   Serial.println(bed_state);
 }
-
+//Reset the draining timer
 void reset_drain_timer(int bed) {
   if (bed == 1) b1_draining_time = millis();
   if (bed == 2) b2_draining_time = millis();
   if (bed == 3) b3_draining_time = millis();
 }
+//Returns the index of next bed that should be cycled
 int get_next_bed(int current) {
   if (!bed1_cycling && !bed2_cycling && !bed3_cycling) return -1;
   int beds[] = {bed1_cycling, bed2_cycling, bed3_cycling};
@@ -329,18 +334,8 @@ int get_next_bed(int current) {
     else if (bed2_cycling == true) return 2;
     else return 3;
   }
-  /*
-    int i = current;
-    while (true) {
-    if (i >= sizeof(beds)) i = 0;
-    if (beds[i] == 1) {
-      i++;
-      return i;
-    }
-    i++;
-    }*/
 }
-
+//Turn on/off the pumps according the states
 void refresh_bed() {
   if (b1_filling && bed_state == 1) {
     fill_bed(1);
@@ -358,6 +353,7 @@ void refresh_bed() {
     drain_bed(3);
   }
 }
+//Turns light on/off according to the booleans
 void refresh_light() {
   if (bed1_light_on) {
     digitalWrite(light1, LOW);
@@ -377,6 +373,7 @@ void refresh_light() {
 
 
 }
+
 void halt_cycle() {
   pause_cycle(1);
   pause_cycle(2);
